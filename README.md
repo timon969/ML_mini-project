@@ -33,7 +33,7 @@ Scenarios 1 + 2 together form the "separate models" approach (each wine is score
 - **Size:** 1,599 red + 4,898 white = 6,497 rows, 11 features + `quality`.
 - **Features (all numeric):** fixed acidity, volatile acidity, citric acid, residual sugar, chlorides, free sulfur dioxide, total sulfur dioxide, density, pH, sulphates, alcohol.
 - **Missing values:** none.
-- **Duplicates:** many exact duplicate rows (240 red = 15.0%, 937 white = 19.1%). They were removed **before** any splitting, because identical rows in train and test folds would leak information. After cleaning: **1,359 red + 3,961 white = 5,320 rows** (also saved as `dataset/wine_clean.csv`).
+- **Duplicates:** many exact duplicate rows (240 red = 15.0%, 937 white = 19.1%). They were removed in the EDA notebook **before** any splitting, because identical rows in train and test folds would leak information. After cleaning: **1,359 red + 3,961 white = 5,320 rows**, saved as `dataset/wine_clean.csv`, which is the input of the Random Forest notebook.
 - **Target distribution after cleaning:**
 
 | quality | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
@@ -55,7 +55,7 @@ Scenarios 1 + 2 together form the "separate models" approach (each wine is score
 **Baseline.** `DummyRegressor(strategy="mean")` (constant prediction) for the final comparison. Earlier exploratory work in `main.ipynb` also used linear regression and polynomial regression as baselines (see section 4.4).
 
 **Preprocessing and leakage control.**
-- Duplicates are removed before any split.
+- Duplicates are removed before any split, in the EDA notebook. The Random Forest notebook loads the cleaned `dataset/wine_clean.csv` and checks that it has no missing values and no duplicate rows.
 - The Random Forest needs no scaling, so the modelling pipeline contains only the model and there is no preprocessing that could leak.
 - The `StandardScaler` used in the EDA notebook is fitted on all data for plotting only. The scaled copy is deliberately **not** saved, and any later model that needs scaling (e.g. SVM) must put it inside a `Pipeline` fitted within each fold.
 
@@ -162,9 +162,9 @@ The model is accurate for the common scores 5–6 and fails on the rare extremes
 │   ├── winequality-red.csv
 │   ├── winequality-white.csv
 │   ├── winequality.names          # UCI description
-│   └── wine_clean.csv             # de-duplicated, merged data (output of the EDA notebook)
+│   └── wine_clean.csv             # de-duplicated, merged data (output of the EDA notebook, input of the RF notebook)
 ├── wine_quality_eda.ipynb         # loading, inspection, cleaning, visualisations
-├── wine_rf_comparison.ipynb       # baseline, 5-fold CV, hold-out, permutation importance, error analysis
+├── wine_rf_comparison.ipynb       # reads wine_clean.csv; baseline, 5-fold CV, hold-out, permutation importance, error analysis
 ├── main.ipynb                     # early exploration: linear / polynomial regression baselines
 └── figures/                       # 4 EDA figures
 ```
@@ -196,7 +196,7 @@ jupyter nbconvert --to notebook --execute main.ipynb --inplace
 jupyter nbconvert --to notebook --execute wine_rf_comparison.ipynb --inplace
 ```
 
-Run the commands from the repository root. The Random Forest notebook takes a few minutes on an ordinary laptop. It re-loads the raw CSV files and removes duplicates itself, so it does not depend on `wine_clean.csv`.
+Run the commands from the repository root. `wine_rf_comparison.ipynb` reads `dataset/wine_clean.csv`, which is committed in the repository; if you change the raw data, run the EDA notebook first to regenerate it. The Random Forest notebook takes about 3 minutes on a 2-core machine. Nearly all of that is Random Forest fitting (5-fold CV in four scenarios plus 20-repeat permutation importance), not data loading.
 
 **Seeds.** `SEED = 42` is used for NumPy, the CV splitter, the hold-out split, the Random Forest and permutation importance (`main.ipynb` uses `random_state=42` in its splits). Cells must be run from top to bottom.
 
@@ -204,9 +204,9 @@ Run the commands from the repository root. The Random Forest notebook takes a fe
 
 ## 9. Disclosure of AI tool use
 
-**Tools used and for what.** Claude (Anthropic). In this project it was used for: drafting this README (goal, data, method, results, conclusions, limitations, reproducibility, this disclosure); reading the repository through a GitHub connector so that the README matches the actual notebooks; translating `main.ipynb` and `wine_rf_comparison.ipynb` from Ukrainian into English; fixing two typos in `main.ipynb` (the function name `polynomia_Regression` and a confusion-matrix title that said "White Wine" while the red-wine model was evaluated); adding a library-version cell to `main.ipynb`; creating `requirements.txt`; and re-executing all three notebooks in one environment with pinned versions and committing the result.
+**Tools used and for what.** Claude (Anthropic). In this project it was used for: drafting this README (goal, data, method, results, conclusions, limitations, reproducibility, this disclosure); reading the repository through a GitHub connector so that the README matches the actual notebooks; translating `main.ipynb` and `wine_rf_comparison.ipynb` from Ukrainian into English; changing `wine_rf_comparison.ipynb` to load the cleaned `dataset/wine_clean.csv` instead of the raw files (the output tables are identical to the previous version); fixing two typos in `main.ipynb` (the function name `polynomia_Regression` and a confusion-matrix title that said "White Wine" while the red-wine model was evaluated); adding a library-version cell to `main.ipynb`; creating `requirements.txt`; and re-executing all three notebooks in one environment with pinned versions and committing the result.
 
-**Influence on methodological decisions.** In this session the AI did not change any methodological decision: it described the design already present in the notebooks (scenarios, identical stratified folds, duplicate removal before splitting, hold-out permutation importance, error analysis). Its edits to the notebooks were limited to translation, the two typo fixes and the version cell. After re-execution, all numeric results were identical to the earlier outputs.
+**Influence on methodological decisions.** In this session the AI did not change any methodological decision: it described the design already present in the notebooks (scenarios, identical stratified folds, duplicate removal before splitting, hold-out permutation importance, error analysis). Its edits to the notebooks were limited to translation, the two typo fixes, the version cell and the switch to `wine_clean.csv`. After re-execution, all numeric results were identical to the earlier outputs.
 
 **Parts written or substantially changed by me.** The research question and scenarios, the baseline and polynomial regression in `main.ipynb`, the choice of metrics, the interpretation of results.
 
@@ -216,6 +216,7 @@ Run the commands from the repository root. The Random Forest notebook takes a fe
 1. "write a README file for the project, covering the goal, the data, the method, the results, the conclusions and the limitations. Instructions for reproducing the work: the environment, the dependencies, and the commands to run."
 2. "paste model comparisons into readme"
 3. "change notebooks so that all libraries are the same, create a requirements.txt. let all notebooks be in english entirely. commit all changes"
+4. "rewrite wine rf comparison so that it uses wine_clean and is therefore quicker. update readme accordingly"
 
 ---
 
