@@ -169,8 +169,6 @@ The model is accurate for the common scores 5–6 and fails on the rare extremes
 └── figures/                       # 4 EDA figures
 ```
 
-All notebooks are in English and print the versions of the libraries they use in their first cell.
-
 ---
 
 ## 8. Reproducibility
@@ -198,7 +196,7 @@ jupyter nbconvert --to notebook --execute main.ipynb --inplace
 jupyter nbconvert --to notebook --execute wine_rf_comparison.ipynb --inplace
 ```
 
-Run the commands from the repository root (the notebooks read `dataset/...`). The Random Forest notebook takes a few minutes on an ordinary laptop. It re-loads the raw CSV files and removes duplicates itself, so it does not depend on `wine_clean.csv`.
+Run the commands from the repository root. The Random Forest notebook takes a few minutes on an ordinary laptop. It re-loads the raw CSV files and removes duplicates itself, so it does not depend on `wine_clean.csv`.
 
 **Seeds.** `SEED = 42` is used for NumPy, the CV splitter, the hold-out split, the Random Forest and permutation importance (`main.ipynb` uses `random_state=42` in its splits). Cells must be run from top to bottom.
 
@@ -206,7 +204,7 @@ Run the commands from the repository root (the notebooks read `dataset/...`). Th
 
 ## 9. Disclosure of AI tool use
 
-**Tools used and for what.** Claude (Anthropic, claude.ai chat). In this project it was used for: drafting this README (goal, data, method, results, conclusions, limitations, reproducibility, this disclosure); reading the repository through a GitHub connector so that the README matches the actual notebooks; translating `main.ipynb` and `wine_rf_comparison.ipynb` from Ukrainian into English; fixing two typos in `main.ipynb` (the function name `polynomia_Regression` and a confusion-matrix title that said "White Wine" while the red-wine model was evaluated); adding a library-version cell to `main.ipynb`; creating `requirements.txt`; and re-executing all three notebooks in one environment with pinned versions and committing the result.
+**Tools used and for what.** Claude (Anthropic). In this project it was used for: drafting this README (goal, data, method, results, conclusions, limitations, reproducibility, this disclosure); reading the repository through a GitHub connector so that the README matches the actual notebooks; translating `main.ipynb` and `wine_rf_comparison.ipynb` from Ukrainian into English; fixing two typos in `main.ipynb` (the function name `polynomia_Regression` and a confusion-matrix title that said "White Wine" while the red-wine model was evaluated); adding a library-version cell to `main.ipynb`; creating `requirements.txt`; and re-executing all three notebooks in one environment with pinned versions and committing the result.
 
 **Influence on methodological decisions.** In this session the AI did not change any methodological decision: it described the design already present in the notebooks (scenarios, identical stratified folds, duplicate removal before splitting, hold-out permutation importance, error analysis). Its edits to the notebooks were limited to translation, the two typo fixes and the version cell. After re-execution, all numeric results were identical to the earlier outputs. **[Add here any methodological help you received from AI tools outside this session, or state that there was none.]**
 
@@ -215,9 +213,9 @@ Run the commands from the repository root (the notebooks read `dataset/...`). Th
 **What I verified and understood independently.** **[Describe what you checked yourself, e.g. re-running the notebooks, checking that duplicates are removed before splitting and that no preprocessing is fitted on test folds, comparing README numbers with notebook outputs, and being able to explain permutation importance and stratified K-fold.]**
 
 **Representative prompts.**
-1. "write a README file for the project, covering the goal, the data, the method, the results, the conclusions and the limitations. Instructions for reproducing the work: the environment, the dependencies, and the commands to run. Disclosing the use of artificial-intelligence tools … Keep in mind that besides random forest we also compared svm, and rf and svm together"
-2. "access my github through composio connector and rewrite the readme based on the existing files https://github.com/timon969/ML_mini-project we don't use rf and svm ensemble, we just compare them in a separate file (in future)"
-3. "i changed the path. change the typo in main.ipynb. change notebooks so that all libraries are the same, create a requirements.txt. in ai disclosure paste your examples. let all notebooks be in english entirely. commit all changes"
+1. "write a README file for the project, covering the goal, the data, the method, the results, the conclusions and the limitations. Instructions for reproducing the work: the environment, the dependencies, and the commands to run."
+2. "paste model comparisons into readme"
+3. "change notebooks so that all libraries are the same, create a requirements.txt. let all notebooks be in english entirely. commit all changes"
 
 ---
 
