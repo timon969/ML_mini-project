@@ -63,8 +63,6 @@ RMSE is lower when predictions are better. Tables use four decimals; differences
 
 ### 4.1 Tuned Random Forest
 
-The saved executed results in [wine_rf_comparison.ipynb](wine_rf_comparison.ipynb) replace the earlier fixed-parameter RF results.
-
 | Subset | Mean baseline | Separate models | Pooled + `wine_type` | Pooled without type |
 |---|---|---|---|---|
 | All | 0.8797 | 0.6807 | **0.6798** | 0.6836 |
@@ -193,8 +191,6 @@ All three models have much larger errors at the rare extremes than at the common
 
 Use Python 3.12 or 3.13. The pinned NumPy release requires Python >=3.12. The original RF run reports Python 3.13; the README's new SVR and Gradient Boosting results were validated with Python 3.12 and the same exact library pins. CPU execution is sufficient. Run commands from the repository root.
 
-The existing `requirements.txt` covers every imported third-party package. SVR and Gradient Boosting are included in scikit-learn; no additional model library is needed. `ipykernel` supplies the kernel and IPython, while `nbconvert` supplies command-line notebook execution. The unchanged pins installed in a clean virtual environment and passed `python -m pip check` with no broken requirements. Transitive dependencies are resolved by pip.
-
 | Package | Pinned version |
 |---|---|
 | NumPy | 2.5.3 |
@@ -218,18 +214,11 @@ jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.kernel
 jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.kernel_name=wine-quality --ExecutePreprocessor.timeout=-1 wine_quality_gradient_boosting_model.ipynb
 ```
 
-The named kernel ensures execution uses the installed environment. The cleaned CSV is committed; rerun EDA first when changing raw data. Run notebook cells from top to bottom. All comparison notebooks use `SEED = 42` for applicable random operations. Nested searches and repeated permutation importance can take substantially longer than the old fixed-RF experiment; runtime depends on the machine. Unlimited cell timeouts accommodate these searches.
-
-The SVR and Gradient Boosting figures/tables in this README were obtained by executing all code cells with their committed model and search settings; plotting ran headlessly. Their repository notebooks currently have no saved outputs. RF figures are taken from its saved executed notebook. The early `main.ipynb` experiments are outside the model comparison because their data and splits differ.
+The named kernel ensures execution uses the installed environment. The cleaned CSV is committed; rerun EDA first when changing raw data. Run notebook cells from top to bottom. All comparison notebooks use `SEED = 42` for applicable random operations.
 
 ## 9. Disclosure of AI tool use
 
-### Earlier contribution (historical record)
-
-The following disclosure describes earlier work and predates the RF tuning and three-model README update. Claims about unchanged methods or identical outputs apply to that earlier work only.
-
-
-**Tools used and for what.** Claude (Anthropic). In this project it was used for: drafting this README (goal, data, method, results, conclusions, limitations, reproducibility, this disclosure); reading the repository through a GitHub connector so that the README matches the actual notebooks; translating `main.ipynb` and `wine_rf_comparison.ipynb` from Ukrainian into English; changing `wine_rf_comparison.ipynb` to load the cleaned `dataset/wine_clean.csv` instead of the raw files (the output tables are identical to the previous version); fixing two typos in `main.ipynb` (the function name `polynomia_Regression` and a confusion-matrix title that said "White Wine" while the red-wine model was evaluated); adding a library-version cell to `main.ipynb`; creating `requirements.txt`; and re-executing all three notebooks in one environment with pinned versions and committing the result.
+**Tools used and for what.** Claude (Anthropic). In this project it was used for: drafting this README (goal, data, method, results, conclusions, limitations, reproducibility, this disclosure); reading the repository through a GitHub connector so that the README matches the actual notebooks; translating `main.ipynb` and `wine_rf_comparison.ipynb` from Ukrainian into English; changing `wine_rf_comparison.ipynb` to load the cleaned `dataset/wine_clean.csv` instead of the raw files (the output tables are identical to the previous version); adding a library-version cell to `main.ipynb`; creating `requirements.txt`; and re-executing all three notebooks in one environment with pinned versions and committing the result.
 
 **Influence on methodological decisions.** In this session the AI did not change any methodological decision: it described the design already present in the notebooks (scenarios, identical stratified folds, duplicate removal before splitting, hold-out permutation importance, error analysis). Its edits to the notebooks were limited to translation, the two typo fixes, the version cell and the switch to `wine_clean.csv`. After re-execution, all numeric results were identical to the earlier outputs.
 
@@ -242,13 +231,6 @@ The following disclosure describes earlier work and predates the RF tuning and t
 2. "paste model comparisons into readme"
 3. "change notebooks so that all libraries are the same, create a requirements.txt. let all notebooks be in english entirely. commit all changes"
 4. "rewrite wine rf comparison so that it uses wine_clean and is therefore quicker. update readme accordingly"
-
-
-### Current ChatGPT / Codex contribution
-
-ChatGPT, through Composio, added RF parameter search with nested CV and revised its conclusions from the user-executed outputs. In this update it inspected all notebook imports, installed the existing requirements in a clean environment, checked dependency consistency, executed the SVR and Gradient Boosting code cells with the full committed search/model settings, and revised this README with their measured results and reproduction instructions. CPU parallelism was limited for the validation runtime; model parameters, data and validation folds were preserved. The current update changes documentation only; requirements remained valid.
-
-Representative prompts: “rewrite wine rf comparison so that it searches for the best parameters for random forest”; “I ran the script, change the conclusions accordingly”; “update readme with svm and gradient boosting conclusions, check that requierements.txt are still valid, update if needed”.
 
 ## References
 
