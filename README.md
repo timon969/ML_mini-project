@@ -2,7 +2,7 @@
 
 A reproducible study of quality-score regression on red and white Portuguese *vinho verde* from the UCI Wine Quality dataset.
 
-# 🍷 Chemical Drivers of Wine Quality and the Impact of Product Segmentation
+# Predicting Wine Quality from Chemistry: Pooled vs. Separate Models for Red and White Wine
 
 ### 1.1 Problem Formulation & Research Questions
 In this machine learning project, we investigate the physicochemical properties of Portuguese "Vinho Verde" wine (red and white variants) to systematically address two core research questions:
@@ -91,7 +91,7 @@ To establish a rigorous empirical reference point, all predictive models across 
 * To address this, we rely on **Permutation Feature Importance** evaluated strictly on held-out validation folds. Shuffling each predictor and computing the relative degradation in validation RMSE provides an unbiased, model-agnostic ranking of true chemical drivers[cite: 2].
 
 
-  ## 4. Validity of the Experiment & Leakage Prevention
+## 4. Validity of the Experiment & Leakage Prevention
 
 To satisfy rigorous experimental standards, the validation architecture strictly mirrors the underlying data distribution and enforces complete partition isolation:
 
@@ -257,18 +257,18 @@ All three models have much larger errors at the rare extremes than at the common
 
 ## 9. Repository structure
 
-| File / directory | Purpose |
+| File or directory | Purpose |
 |---|---|
-| `dataset/winequality-red.csv`, `dataset/winequality-white.csv`, `dataset/winequality.names` | Raw UCI data and description |
-| `dataset/wine_clean.csv` | Deduplicated input shared by all model comparisons |
-| [wine_quality_eda.ipynb](wine_quality_eda.ipynb) | Data inspection, cleaning and plots |
-| [wine_rf_comparison.ipynb](wine_rf_comparison.ipynb) | Tuned RF comparison with saved executed results |
-| [wine_svr_gridsearch_cv.ipynb](wine_svr_gridsearch_cv.ipynb) | Scaled SVR with nested grid search |
-| [wine_quality_gradient_boosting_model.ipynb](wine_quality_gradient_boosting_model.ipynb) | Fixed 300-stage Gradient Boosting comparison |
-| [main.ipynb](main.ipynb) | Early linear/polynomial exploration before deduplication, using different splits; scores are not directly comparable |
-| `SVR.ipynb` | Empty placeholder; use `wine_svr_gridsearch_cv.ipynb` |
-| `figures/` | Four EDA figures |
-| [requirements.txt](requirements.txt) | Pinned dependencies shared by the notebooks |
+| [`README.md`](README.md) | Documents the research questions, methods, results, and reproduction steps. |
+| [`requirements.txt`](requirements.txt) | Lists the pinned Python dependencies. |
+| [`wine_quality_eda.ipynb`](wine_quality_eda.ipynb) | Explores the raw UCI data, removes exact duplicates, and produces the cleaned dataset and exploratory plots. |
+| [`wine_rf_comparison.ipynb`](wine_rf_comparison.ipynb) | Compares tuned Random Forest models across separate and pooled training setups. |
+| [`wine_svr_gridsearch_cv.ipynb`](wine_svr_gridsearch_cv.ipynb) | Compares scaled support vector regression models using nested grid search. |
+| [`wine_quality_gradient_boosting_model.ipynb`](wine_quality_gradient_boosting_model.ipynb) | Compares fixed-parameter Gradient Boosting models across separate and pooled training setups. |
+| [`SVR.ipynb`](SVR.ipynb) | Evaluates fixed-parameter RBF support vector regression on the cleaned dataset. Compares separate and pooled models against a mean-prediction baseline and uses confusion matrices to examine rounded predictions. |
+| [`main.ipynb`](main.ipynb) | Contains early linear and polynomial regression experiments with different data preparation and splits. |
+| [`dataset/`](dataset/) | Contains the original UCI red and white wine data, the dataset description, and the deduplicated `wine_clean.csv`. |
+| [`figures/`](figures/) | Contains exploratory plots of wine types, quality scores, feature distributions, and correlations. |
 
 ## 10. Reproducibility and dependencies
 
