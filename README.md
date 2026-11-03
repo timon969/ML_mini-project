@@ -4,7 +4,6 @@ A reproducible study of quality-score regression on red and white Portuguese *vi
 
 # 🍷 Chemical Drivers of Wine Quality and the Impact of Product Segmentation
 
-<<<<<<< HEAD
 ### 1.1 Problem Formulation & Research Questions
 In this machine learning project, we investigate the physicochemical properties of Portuguese "Vinho Verde" wine (red and white variants) to systematically address two core research questions:
 
@@ -43,20 +42,6 @@ To ensure the investigation is rigorous, reproducible, and conclusive, the answe
   * Results are validated via ranked bar plots with standard deviation error bars, distinguishing universal quality drivers (e.g., alcohol content) from type-specific drivers (e.g., volatile acidity in red wine vs. sulfur dioxide balance in white wine).
 
 ---
-=======
-Compare separate wine-type models with pooled models, and identify the chemical features most useful for predicting `quality` (integer scores 3–9). Predictions are continuous; rounded predictions are also evaluated with classification-style metrics.
-
-The repository contains three model families: tuned Random Forest, tuned Support Vector Regression (SVR, the regression form of SVM), and fixed-parameter Gradient Boosting.
-
-| Scenario | Training data | Evaluation rows |
-|---|---|---|
-| Red only | Red wines | Red wines |
-| White only | White wines | White wines |
-| Pooled + `wine_type` | All wines, including type | All wines, also reported by type |
-| Pooled without `wine_type` | All wines, excluding type | All wines, also reported by type |
-
-The two separate models together form the separate approach. All three comparison notebooks use the same five outer validation folds, so scenarios can be compared on identical rows.
->>>>>>> 05b88a282f1748573371b21f7a9147f4c477643a
 
 ## 2. Data
 
@@ -82,7 +67,6 @@ The two separate models together form the separate approach. All three compariso
 
 ## 3. Methodology & Model Justification
 
-<<<<<<< HEAD
 ### 3.1. Baseline Comparison (Dummy Regressor)
 To establish a rigorous empirical reference point, all predictive models across all four data segmentation scenarios are benchmarked against a **Dummy Regressor** (predicting the mean target value of the training set). This quantifies the exact performance gain achieved by capturing chemical features over a naive guess and confirms that model accuracy is driven by signal rather than class clustering around median quality scores.
 
@@ -129,23 +113,6 @@ To satisfy rigorous experimental standards, the validation architecture strictly
 
 
 ---
-=======
-**Preprocessing.** The comparison notebooks load `dataset/wine_clean.csv`, map wine type to 0/1 and exclude `quality_category`. Duplicates are removed before splitting. SVR puts `StandardScaler` inside its searched pipeline, fitted only on training folds. The tree models require no scaling; EDA scaling is for plots only.
-
-| Model | Configuration | Parameter selection |
-|---|---|---|
-| Random Forest | `RandomForestRegressor` in a pipeline | `RandomizedSearchCV`: 12 sampled configurations, three shuffled inner folds; minimise mean inner-fold RMSE |
-| SVM / SVR | `StandardScaler` → RBF `SVR` (`epsilon=0.1`) | `GridSearchCV`: `C` = 0.1/1/10, `gamma` = `scale`/`auto`/0.1; three inner folds; minimise mean squared error |
-| Gradient Boosting | `GradientBoostingRegressor(n_estimators=300, random_state=42)` | Fixed settings; all remaining parameters at library defaults; no tuning |
-
-RF searches tree count (100/200/300), depth (`None`/10/20/30), minimum split size (2/5/10), minimum leaf size (1/2/4), feature sampling (1.0/0.7/`sqrt`) and bootstrap on/off. SVR searches nine combinations. Mean inner-fold MSE and mean inner-fold RMSE are distinct aggregation objectives; the results below compare all models using outer RMSE.
-
-**Validation.** Five outer `StratifiedKFold` folds are shuffled with seed 42 and stratified jointly by `wine_type + quality`. RF and SVR repeat parameter selection inside each outer training fold (nested CV); outer validation rows never enter the corresponding search. The `DummyRegressor(strategy="mean")` baseline is not tuned. Scores are calculated from concatenated out-of-fold predictions and reported separately for all wines, red and white.
-
-**Secondary hold-out.** Each notebook also uses the same stratified 80/20 split: 4,256 training and 1,064 test rows. RF and SVR run fresh searches on training data and evaluate their refitted best estimators on untouched test rows. This split overlaps the full-data CV experiment and is not a separate independent dataset.
-
-**Metrics.** RMSE, MAE, R², rounded accuracy and proportion within ±1 point. Hold-out macro precision/recall/F1 and confusion matrices show the effect of class imbalance. Fold-to-fold RMSE standard deviations describe variability, not formal significance. Permutation importance uses 20 repeats on hold-out test rows, measured as RMSE increase after shuffling a feature. Per-score outer-CV MAE identifies difficult target values.
->>>>>>> 05b88a282f1748573371b21f7a9147f4c477643a
 
 
 ## 5. Evaluation Criterion
@@ -166,14 +133,14 @@ Wine quality prediction lies at the intersection of continuous regression and or
 
 ---
 
-### 6.3. Analysis &
+### 6.3. Analysis 
 
 1. **Confusion Matrices (Heatmaps):**
    * Multi-class confusion matrices illustrate that predictions concentrate tightly along the main diagonal, with over 95% of total errors confined strictly within the $\pm 1$ point tolerance band[cite: 3, 5].
 2. **Error Distribution Curves by Quality Tier (MAE by True Score):**
    * Residual analysis reveals an inherent regression-to-the-mean tendency: models exhibit minimal error on abundant classes (scores 5 and 6, MAE $\approx 0.45$), while error increases on extreme tiers (scores 3 and 8/9, MAE $> 1.0$), reflecting sample scarcity in the training distribution[cite: 3, 5].
 3. **Validation Permutation Feature Importance:**
-   * Ranked horizontal bar plots with fold-variance error bars quantify the exact impact of chemical factors on validation RMSE[cite: 3, 5]. Alcohol and volatile acidity consistently emerge as the primary non-linear drivers across both cultivars, whereas `wine_type` contributes negligible marginal importance[cite: 3, 5, 6].
+   * Ranked horizontal bar plots with fold-variance error bars quantify the exact impact of chemical factors on validation RMSE. Alcohol and volatile acidity consistently emerge as the primary non-linear drivers across both cultivars, whereas `wine_type` contributes negligible marginal importance.
 
 
 ## 4. Results
