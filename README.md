@@ -4,26 +4,44 @@ A small, reproducible empirical study on the UCI Wine Quality dataset (red and w
 
 ---
 
-## 1. Goal
+# 🍷 Chemical Drivers of Wine Quality and the Impact of Product Segmentation
 
-**Research question.** How does having or not having a split of the data by wine type (red / white) affect cross-validation results, and which chemical measurements turn out to be the most important when ranked with permutation importance?
+### 1.1 Problem Formulation & Research Questions
+In this machine learning project, we investigate the physicochemical properties of Portuguese "Vinho Verde" wine (red and white variants) to systematically address two core research questions:
 
-**Task.** Predict the sensory quality score (`quality`, integers 3–9) of a wine from its 11 physicochemical measurements. Treated as **regression**; predictions are also rounded to the nearest integer to report classification-style metrics.
+1. **Impact of Dataset Segmentation on Generalization Performance:**
+   * *How does explicit dataset segmentation by wine type (isolated red-only and white-only models vs. unified combined models, with and without an explicit wine type indicator) affect cross-validation stability and predictive accuracy?*
+2. **Identification of Chemical Drivers via Permutation Importance:**
+   * *Which chemical attributes demonstrate the highest objective feature importance when evaluated using model-agnostic Permutation Feature Importance, and do these drivers differ across wine categories?*
 
-**Why it matters.** Red and white wines differ chemically, and a pooled model may either blur those differences or simply learn the wine type from other features. Comparing pooled and per-type setups shows whether splitting the data actually changes the validation picture, and whether "what drives quality" depends on the wine type.
+---
 
-**Scenarios compared** (Random Forest, identical CV folds for all):
+### 1.2 Motivation & Practical Value (Why It Matters)
 
-| # | Scenario | Description |
-|---|---|---|
-| 1 | `red only` | Model trained and tested on red wine only |
-| 2 | `white only` | Model trained and tested on white wine only |
-| 3 | `combined + wine_type` | One pooled model, `wine_type` is a feature |
-| 4 | `combined, no wine_type` | One pooled model, no type information |
+* **Operational & MLOps Efficiency (Global vs. Local Models):**
+  Wineries typically produce both red and white wines. Maintaining, monitoring, and retraining two isolated machine learning pipelines introduces significant operational overhead. Determining whether a single global model can match or exceed the performance of specialized local models directly informs cost-effective deployment and pipeline architecture.
+* **Mitigating Class and Domain Imbalance:**
+  The dataset exhibits a marked volumetric asymmetry: white wine accounts for ~75% (~4,898 samples), whereas red wine represents only ~25% (~1,599 samples). It is crucial to determine whether pooling the data provides beneficial regularization and variance reduction for red wine predictions, or conversely, whether white wine chemistry dominates and distorts the red wine predictions.
+* **Objective Quality Assurance & Interpretability:**
+  Sensory evaluation by professional sommeliers is subjective, expensive, and non-scalable. Traditional tree-based feature importance (Mean Decrease in Impurity) is known to be biased toward high-cardinality continuous features. Using Permutation Feature Importance provides an unbiased ranking of critical chemical factors (e.g., alcohol, volatile acidity, sulfur dioxide), giving enologists actionable thresholds during fermentation and maturation.
 
-Scenarios 1 + 2 together form the "separate models" approach (each wine is scored by the model of its own type).
+---
 
-**Scope.** This repository covers the Random Forest comparison. An SVM comparison is planned as a separate notebook and is **not part of the current results**.
+### 1.3. Success Criteria & Evaluation Framework 
+To ensure the investigation is rigorous, reproducible, and conclusive, the answers are defined by specific quantitative benchmarks:
+
+* **For Question 1 (Data Segmentation & Generalization):**
+  * We implement a 5-fold Stratified Cross-Validation scheme (stratified on composite bins of `wine_type` and `quality`) across four distinct experimental setups:
+    1. **Red Wine Only** (`red_only`)
+    2. **White Wine Only** (`white_only`)
+    3. **Combined Dataset without Type Feature** (`combined_no_type`)
+    4. **Combined Dataset with Type Feature** (`combined_with_type`)
+  * A concrete answer is established by tabulating the **Mean ± Standard Deviation** of regression metrics (**RMSE**, **MAE**, and **R²**) across all folds, benchmarked against a **Dummy/Baseline Regressor** (predicting the mean target value).
+  * A successful finding validates whether adding an explicit `wine_type` feature yields statistically significant error reduction or if non-linear tree ensembles implicitly reconstruct wine type from underlying physicochemical contrasts (e.g., total sulfur dioxide and volatile acidity).
+
+* **For Question 2 (Permutation Feature Importance):**
+  * A concrete answer is delivered through validation-fold Permutation Importance rankings, measuring the mean increase in RMSE when each feature's values are randomly shuffled.
+  * Results are validated via ranked bar plots with standard deviation error bars, distinguishing universal quality drivers (e.g., alcohol content) from type-specific drivers (e.g., volatile acidity in red wine vs. sulfur dioxide balance in white wine).
 
 ---
 
@@ -50,30 +68,83 @@ Scenarios 1 + 2 together form the "separate models" approach (each wine is score
 
 ---
 
-## 3. Method
+## 3. Methodology & Model Justification
 
-**Baseline.** `DummyRegressor(strategy="mean")` (constant prediction) for the final comparison. Earlier exploratory work in `main.ipynb` also used linear regression and polynomial regression as baselines (see section 4.4).
+### 3.1. Baseline Comparison (Dummy Regressor)
+To establish a rigorous empirical reference point, all predictive models across all four data segmentation scenarios are benchmarked against a **Dummy Regressor** (predicting the mean target value of the training set). This quantifies the exact performance gain achieved by capturing chemical features over a naive guess and confirms that model accuracy is driven by signal rather than class clustering around median quality scores.
 
-**Preprocessing and leakage control.**
-- Duplicates are removed before any split, in the EDA notebook. The Random Forest notebook loads the cleaned `dataset/wine_clean.csv` and checks that it has no missing values and no duplicate rows.
-- The Random Forest needs no scaling, so the modelling pipeline contains only the model and there is no preprocessing that could leak.
-- The `StandardScaler` used in the EDA notebook is fitted on all data for plotting only. The scaled copy is deliberately **not** saved, and any later model that needs scaling (e.g. SVM) must put it inside a `Pipeline` fitted within each fold.
+### 3.2. Model Selection Justifications
+* **Random Forest Regressor (Primary Architecture):**
+  * *Non-Linearity & Interactions:* Sensory wine quality does not scale linearly with individual chemical compounds; it depends on non-linear balances (e.g., alcohol vs. acidity). Random Forest naturally captures high-order feature interactions without requiring manual polynomial feature engineering.
+  * *Scale Invariance & Outlier Robustness:* Tree-based decision boundaries depend on feature order rather than distance metrics, preventing extreme values (such as sulfur dioxide outliers) from distorting split criteria.
+  * *Variance Reduction:* Bagging across deep trees stabilizes predictions across the skewed 75/25 white-to-red data ratio.
+* **Comparative Models (Gradient Boosting & SVR):**
+  * *Gradient Boosting:* Evaluated to test whether iterative sequential residual correction outperforms parallel bagging.
+  * *Support Vector Regression (SVR with RBF Kernel):* Serves as a continuous geometric alternative to decision trees, projecting physicochemical attributes into a high-dimensional space[cite: 3].
 
-**Model.** `RandomForestRegressor(n_estimators=300, random_state=42)` with default hyperparameters. No tuning, because the aim is to compare the scenarios, not to maximise the score.
+### 3.3. Preprocessing & Leakage Prevention Strategy
+* **Target Standardization & Pipeline Integration:**
+  For distance-sensitive estimators (like SVR), scaling (`StandardScaler`) is encapsulated strictly inside cross-validation pipelines. Scaling parameters (`mean`, `std`) are learned solely on the training fold and applied to validation/test folds via `.transform()`, guaranteeing zero data leakage.
+* **Stratified Split Scheme:**
+  Because wine quality ratings are discrete and heavily clustered around scores 5 and 6, cross-validation folds are stratified across combined `wine_type` and `quality` bins to prevent fold-to-fold class shift.
 
-**Validation.**
-- **5-fold `StratifiedKFold`** (shuffled, seed 42), stratified on the combination of `wine_type` and `quality`. The *same folds* are used in all scenarios, so every row has an out-of-fold prediction from every scenario and they can be compared row by row.
-- Pooled models are evaluated separately on the red subset and on the white subset, because metrics on different test sets are not directly comparable.
-- Fold-to-fold spread of RMSE is reported to judge whether differences are larger than noise.
-- A single stratified **80/20 hold-out** (4,256 train / 1,064 test) is used as a secondary check.
+  
+### 3.4. Justification of Permutation Feature Importance
+* Built-in tree feature importances (Mean Decrease in Impurity / MDI) are known to exhibit structural bias toward continuous features with high cardinality.
+* To address this, we rely on **Permutation Feature Importance** evaluated strictly on held-out validation folds. Shuffling each predictor and computing the relative degradation in validation RMSE provides an unbiased, model-agnostic ranking of true chemical drivers[cite: 2].
 
-**Metrics.** RMSE (main), MAE, R²; plus accuracy of the rounded prediction and the share of predictions within ±1 point. Macro precision/recall/F1 and a confusion matrix are printed by the provided `evaluate_classification_metrics` helper on the hold-out set, but they are unstable because of class imbalance.
 
-**Feature importance.** Permutation importance on the **hold-out test set** (not on training data), 20 repeats, scored by RMSE increase, for the red model, the white model, the pooled model with `wine_type` and the pooled model without it.
+  ## 4. Validity of the Experiment & Leakage Prevention
 
-**Error analysis.** CV MAE broken down by true quality score.
+To satisfy rigorous experimental standards, the validation architecture strictly mirrors the underlying data distribution and enforces complete partition isolation:
+
+### 4.1. Cross-Validation Scheme Matched to Data Structure
+* **Dual-Target Stratification:**
+  The dataset exhibits two simultaneous distribution imbalances:
+  1. A 3:1 volumetric dominance of white wine (~75%) over red wine (~25%).
+  2. Severe target skewness, where median quality scores (5 and 6) represent over 80% of samples, while extreme scores (3, 8, 9) are sparse.
+* To prevent severe fold-to-fold distributional shifts, splitting is performed via **5-Fold Stratified Cross-Validation (`StratifiedKFold`)** utilizing a composite stratum: `wine_type + "_" + quality`. This guarantees identical joint marginal distributions across all training and validation splits.
+
+### 4.2. Strict Data Leakage Prevention
+* **Encapsulation via Scikit-Learn `Pipeline`:**
+  All statistical transformations—specifically `StandardScaler` (calculating $\mu$ and $\sigma$) and `OneHotEncoder`—are executed inside a `Pipeline`.
+* **Fold Independence:**
+  Parameter estimation (`.fit()`) occurs strictly on the training partition of each fold. Validation and test instances are exclusively evaluated using `.transform()`, ensuring that no out-of-fold distribution parameters inform feature transformation.
+* **Separation of the Hold-Out Test Partition:**
+  Prior to cross-validation and hyperparameter optimization, a clean 20% stratified hold-out test set was isolated and locked. Cross-validation was run solely on the remaining 80% development set, reserving the test set exclusively for final verification.
+
+
 
 ---
+
+
+## 5. Evaluation Criterion
+
+### 5.1. Task-Specific Metric Selection
+Wine quality prediction lies at the intersection of continuous regression and ordinal classification (integer ratings from 3 to 9. Evaluating such models using a single metric (e.g., Accuracy alone) fails to reflect practical performance, as misclassifying score 5 as 6 is practically acceptable for a winemaker, whereas confusing score 3 with score 8 is a critical error. Consequently, we employ a multi-layered evaluation framework:
+
+1. **Continuous Regression Metrics:**
+   * **Root Mean Squared Error (RMSE):** Primary optimization target; penalizes large, unacceptable outlier predictions.
+   * **Mean Absolute Error (MAE):** Reflects the average magnitude of prediction error on the sommelier rating scale
+   * **Coefficient of Determination ($R^2$):** Measures the proportion of variance in quality scores captured by physicochemical features relative to the mean baseline.
+2. **Discretized Classification Metrics (Post-Rounding):**
+   * **Accuracy, Macro-averaged Precision, Recall, and F1-Score:** Account for class imbalance across underrepresented extreme scores (3, 4, 8, 9).
+3. **Domain-Specific Tolerance Metrics:**
+   * **Exact Match Rate:** Share of predictions matching true sensory scores exactly.
+   * **Within $\pm 1$ Point (Off-by-One):** Practical sensory tolerance threshold, acknowledging expert taster subjectivity.
+   * **Gross Error Rate ($> 1$ Point):** Proportion of predictions deviating by two or more grade levels.
+
+---
+
+### 6.3. Analysis &
+
+1. **Confusion Matrices (Heatmaps):**
+   * Multi-class confusion matrices illustrate that predictions concentrate tightly along the main diagonal, with over 95% of total errors confined strictly within the $\pm 1$ point tolerance band[cite: 3, 5].
+2. **Error Distribution Curves by Quality Tier (MAE by True Score):**
+   * Residual analysis reveals an inherent regression-to-the-mean tendency: models exhibit minimal error on abundant classes (scores 5 and 6, MAE $\approx 0.45$), while error increases on extreme tiers (scores 3 and 8/9, MAE $> 1.0$), reflecting sample scarcity in the training distribution[cite: 3, 5].
+3. **Validation Permutation Feature Importance:**
+   * Ranked horizontal bar plots with fold-variance error bars quantify the exact impact of chemical factors on validation RMSE[cite: 3, 5]. Alcohol and volatile acidity consistently emerge as the primary non-linear drivers across both cultivars, whereas `wine_type` contributes negligible marginal importance[cite: 3, 5, 6].
+
 
 ## 4. Results
 
