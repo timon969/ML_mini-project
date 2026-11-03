@@ -115,39 +115,36 @@ To satisfy rigorous experimental standards, the validation architecture strictly
 ---
 
 
-## 5. Evaluation Criterion
+## 5. Evaluation Framework
 
-### 5.1. Task-Specific Metric Selection
-Wine quality prediction lies at the intersection of continuous regression and ordinal classification (integer ratings from 3 to 9. Evaluating such models using a single metric (e.g., Accuracy alone) fails to reflect practical performance, as misclassifying score 5 as 6 is practically acceptable for a winemaker, whereas confusing score 3 with score 8 is a critical error. Consequently, we employ a multi-layered evaluation framework:
+### 5.1. Regression Metrics
 
-1. **Continuous Regression Metrics:**
-   * **Root Mean Squared Error (RMSE):** Primary optimization target; penalizes large, unacceptable outlier predictions.
-   * **Mean Absolute Error (MAE):** Reflects the average magnitude of prediction error on the sommelier rating scale
-   * **Coefficient of Determination ($R^2$):** Measures the proportion of variance in quality scores captured by physicochemical features relative to the mean baseline.
-2. **Discretized Classification Metrics (Post-Rounding):**
-   * **Accuracy, Macro-averaged Precision, Recall, and F1-Score:** Account for class imbalance across underrepresented extreme scores (3, 4, 8, 9).
-3. **Domain-Specific Tolerance Metrics:**
-   * **Exact Match Rate:** Share of predictions matching true sensory scores exactly.
-   * **Within $\pm 1$ Point (Off-by-One):** Practical sensory tolerance threshold, acknowledging expert taster subjectivity.
-   * **Gross Error Rate ($> 1$ Point):** Proportion of predictions deviating by two or more grade levels.
+* **Root Mean Squared Error (RMSE):** The primary metric for comparing models on the shared outer folds. It measures error in quality-score points and gives larger errors more weight.
+* **Mean Absolute Error (MAE):** The average absolute prediction error in quality-score points. Reporting MAE by true score shows where errors concentrate.
+* **Coefficient of Determination ($R^2$):** Measures how much squared error the model reduces relative to predicting the mean of the evaluation targets.
 
----
+### 5.2. Rounded Predictions and Error Tolerance
 
-### 6.3. Analysis 
+* **Exact Match and Macro Metrics:** Round predictions to integer scores and report accuracy alongside macro-averaged precision, recall, and F1. Macro averaging gives rare scores the same weight as common scores.
+* **Within One Point:** Report the share of rounded predictions within one point of the observed score. The complementary share captures errors of two or more points.
 
-1. **Confusion Matrices (Heatmaps):**
-   * Multi-class confusion matrices illustrate that predictions concentrate tightly along the main diagonal, with over 95% of total errors confined strictly within the $\pm 1$ point tolerance band[cite: 3, 5].
-2. **Error Distribution Curves by Quality Tier (MAE by True Score):**
-   * Residual analysis reveals an inherent regression-to-the-mean tendency: models exhibit minimal error on abundant classes (scores 5 and 6, MAE $\approx 0.45$), while error increases on extreme tiers (scores 3 and 8/9, MAE $> 1.0$), reflecting sample scarcity in the training distribution[cite: 3, 5].
-3. **Validation Permutation Feature Importance:**
-   * Ranked horizontal bar plots with fold-variance error bars quantify the exact impact of chemical factors on validation RMSE. Alcohol and volatile acidity consistently emerge as the primary non-linear drivers across both cultivars, whereas `wine_type` contributes negligible marginal importance.
+### 5.3. Confusion Matrices
 
+Compare rounded predictions with observed scores to see which ratings the models confuse. Read these matrices alongside the within-one-point rate because exact accuracy treats adjacent and distant misses alike.
 
-## 4. Results
+### 5.4. Prediction Error by Quality Score
+
+Compare MAE across true scores and report the number of wines in each tier. In the available comparison, errors were smallest around the common scores of 5 and 6 and larger at the sparsely represented extremes.
+
+### 5.5. Permutation Importance by Model
+
+Shuffle each feature on the validation fold and measure how much RMSE increases. Alcohol led the Random Forest and fixed-parameter Gradient Boosting rankings. Density led pooled SVR, where wine type also ranked highly. These rankings describe model reliance. Correlated predictors can share importance, and the rankings cannot establish causation.
+
+## 6. Results
 
 RMSE is lower when predictions are better. Tables use four decimals; differences calculated before rounding may not match subtraction of displayed values exactly.
 
-### 4.1 Tuned Random Forest
+### 6.1 Tuned Random Forest
 
 | Subset | Mean baseline | Separate models | Pooled + `wine_type` | Pooled without type |
 |---|---|---|---|---|
@@ -159,7 +156,7 @@ The pooled model with type has the lowest RMSE, but leads separate models by onl
 
 Alcohol leads all four RF permutation-importance rankings (RMSE increase about 0.103–0.113). In the pooled model with type it is followed by volatile acidity (0.0488) and free sulfur dioxide (0.0397). Sulphates matter more for red (0.0615 versus 0.0045 for white), while free sulfur dioxide matters more for white (0.0366 versus 0.0037 for red). Type itself has small importance (0.0044).
 
-### 4.2 SVM / Support Vector Regression
+### 6.2 SVM / Support Vector Regression
 
 | Subset | Mean baseline | Separate models | Pooled + `wine_type` | Pooled without type |
 | --- | --- | --- | --- | --- |
@@ -189,7 +186,7 @@ The fresh hold-out searches select the following parameters; they are not the pa
 | Pooled + type | 1 | scale |
 | Pooled without type | 1 | scale |
 
-### 4.3 Gradient Boosting
+### 6.3 Gradient Boosting
 
 | Subset | Mean baseline | Separate models | Pooled + `wine_type` | Pooled without type |
 | --- | --- | --- | --- | --- |
@@ -212,7 +209,7 @@ Pooling helps Gradient Boosting most on red wines: RMSE falls from 0.6803 for a 
 
 These results describe the committed fixed 300-stage model (default learning rate 0.1 and tree depth 3), not a tuned Gradient Boosting optimum. Changing its depth, learning rate or number of stages may change the comparison.
 
-### 4.4 Overall comparison on the same outer folds
+### 6.4 Overall comparison on the same outer folds
 
 | Model | Scenario | RMSE ↓ | R² ↑ | Rounded accuracy ↑ |
 | --- | --- | --- | --- | --- |
@@ -228,7 +225,7 @@ These results describe the committed fixed 300-stage model (default learning rat
 
 The lowest observed overall RMSE is **0.6798**, from **Random Forest — Pooled + type**. The search budgets differ, so this ranks the implemented procedures rather than establishing an inherent winner among model families.
 
-### 4.5 Error by true quality score
+### 6.5 Error by true quality score
 
 Outer-CV MAE for the pooled model with type:
 
@@ -240,7 +237,7 @@ Outer-CV MAE for the pooled model with type:
 
 All three models have much larger errors at the rare extremes than at the common scores 5–6, consistent with predictions tending towards the middle of the scale. The extreme scores have small samples; per-score errors should be interpreted alongside these counts.
 
-## 5. Conclusions
+## 7. Conclusions
 
 1. **Model comparison.** The lowest overall nested/outer-CV RMSE in the implemented experiments is 0.6798 (Random Forest, Pooled + type). Use the common outer-fold comparison above; inner search scores and metrics from different wine-type subsets answer different questions.
 2. **Separate versus pooled.** For RF, pooled with type leads separate models by only 0.0009 RMSE. Separate SVR models lead overall (0.7034 versus 0.7061 for pooled with type), driven by better white-wine predictions. Gradient Boosting benefits from pooling (0.6992 versus 0.7089), especially on red wines. The pooling decision is model-dependent; these rankings are descriptive, not significance tests.
@@ -248,7 +245,7 @@ All three models have much larger errors at the rare extremes than at the common
 4. **Features and errors.** Alcohol leads the tree-model rankings, while density and wine type lead the pooled SVR ranking. Strong permutation importance for type in SVR can coexist with a small retraining benefit from including it. All models struggle more with rare extreme scores than with common scores 5–6. Predictive importance does not establish a causal effect on wine quality.
 5. **Tuning matters for interpretation.** RF and SVR search their parameters within training folds; Gradient Boosting remains fixed. Its result is a useful baseline, but cannot establish the performance ceiling of boosting. A shared hold-out is a secondary check, not a replacement for cross-validation.
 
-## 6. Limitations
+## 8. Limitations
 
 - Search budgets differ: RF samples 12 configurations, SVR searches nine combinations, and Gradient Boosting is not tuned. Results compare these implemented procedures, not the best possible version of each algorithm.
 - Finite searches do not guarantee global optima; selected parameters can vary by outer fold and scenario.
@@ -258,7 +255,7 @@ All three models have much larger errors at the rare extremes than at the common
 - Red has fewer observations than white. Fold spread and a single hold-out split do not establish statistical significance.
 - The hold-out and full-data CV overlap. Conclusions apply to these data, splits, preprocessing choices and search budgets.
 
-## 7. Repository structure
+## 9. Repository structure
 
 | File / directory | Purpose |
 |---|---|
@@ -273,7 +270,7 @@ All three models have much larger errors at the rare extremes than at the common
 | `figures/` | Four EDA figures |
 | [requirements.txt](requirements.txt) | Pinned dependencies shared by the notebooks |
 
-## 8. Reproducibility and dependencies
+## 10. Reproducibility and dependencies
 
 Use Python 3.12 or 3.13. The pinned NumPy release requires Python >=3.12. The original RF run reports Python 3.13; the README's new SVR and Gradient Boosting results were validated with Python 3.12 and the same exact library pins. CPU execution is sufficient. Run commands from the repository root.
 
@@ -302,7 +299,7 @@ jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.kernel
 
 The named kernel ensures execution uses the installed environment. The cleaned CSV is committed; rerun EDA first when changing raw data. Run notebook cells from top to bottom. All comparison notebooks use `SEED = 42` for applicable random operations.
 
-## 9. Disclosure of AI tool use
+## 11. Disclosure of AI tool use
 
 **Tools used and for what.** Claude (Anthropic). In this project it was used for: drafting this README (goal, data, method, results, conclusions, limitations, reproducibility, this disclosure); reading the repository through a GitHub connector so that the README matches the actual notebooks; translating `main.ipynb` and `wine_rf_comparison.ipynb` from Ukrainian into English; changing `wine_rf_comparison.ipynb` to load the cleaned `dataset/wine_clean.csv` instead of the raw files (the output tables are identical to the previous version); adding a library-version cell to `main.ipynb`; creating `requirements.txt`; and re-executing all three notebooks in one environment with pinned versions and committing the result.
 
